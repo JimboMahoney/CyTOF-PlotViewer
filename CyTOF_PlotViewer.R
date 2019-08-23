@@ -208,7 +208,7 @@ testfile <- capture.output(testfile)[7]
     # or with free scales
     facet_wrap("parameter",scales="free") +
     # Hide legend, make text smaller
-    theme(legend.position = "none",axis.text.x = element_text(size=10),axis.text.y = element_text(size=10)) +
+    theme(legend.position = "none",axis.text.x = element_text(size=8),axis.text.y = element_text(size=8)) +
     ggtitle(filename)
     
   
