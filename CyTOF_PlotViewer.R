@@ -192,7 +192,11 @@ testfile <- capture.output(testfile)[7]
   fcsmelted$intensity <- fcsmelted$intensity + 0.9
   
   ## Generate log width bins
-  bins <- c(seq(0.9,100,1),seq(101,1000,5),seq(1001,10000,100),seq(10001,max(fcsmelted$intensity),200))
+  ## Starting at the 0.9 minimum we set previously, ending at max intensity found in data.
+  lseq <- function(from=1, to=100000, length.out=6) {
+    exp(seq(log(from), log(to), length.out = length.out))
+  }
+  bins <- c(seq(0.9,99,1),lseq(100,max(fcsmelted$intensity),256))
   
   ## Generate x-axis labels
   xaxislabels<-c(0,10^seq(0,round(log10(max(fcsmelted$intensity)),0)))
