@@ -5,7 +5,7 @@ Plots log histograms for user-selected parameters of FCS files like Fluidigm's P
 e.g. like this:
 
 
-<img src="https://raw.githubusercontent.com/JimboMahoney/CyTOF-PlotViewer/master/CyTOF_PlotViewer.png"
+<img src="https://raw.githubusercontent.com/JimboMahoney/CyTOF-PlotViewer/master/plot5.png"
   align="center" />
   
  
