@@ -1,6 +1,8 @@
 ## Generates histograms like PlotViewer for each user-selected parameter
 
-
+### Note that the axis label at point 10^0 should actually be zero, but I can't figure out a way to achieve that whilst still having nice units
+## for the rest of the X-axis.
+## This is caused by adding a very small "fudge" factor of 0.9 to all intensity values in order to get them to plot nicely.
 
 
 #########################################################
@@ -15,8 +17,8 @@ if (!require("svDialogs")) {
 if (!require("flowCore")) {
   if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-  
-  BiocManager::install("flowCore")
+    BiocManager::install("flowCore")
+    library(flowCore)
 }
 
 if (!require("tidyverse")) {
@@ -135,12 +137,10 @@ testfile <- capture.output(testfile)[7]
   FCSDATA <- FCSDATA %>% select(-contains("SSC"))
   
   
-  
-  
   #Calculate size of dataset
   DataSizeM <- (ncol(FCSDATA)*nrow(FCSDATA))/1000000
   #Subsample if dataset is large
-  if (DataSizeM>3){
+  if (DataSizeM>2){
     #using random 10% of original rows
     #FCSDATA <- FCSDATA[sample(nrow(FCSDATA),nrow(FCSDATA)/10),]
     #OR
@@ -148,10 +148,6 @@ testfile <- capture.output(testfile)[7]
     numrows <- 5000
     FCSDATA <- FCSDATA[sample(nrow(FCSDATA),numrows),]
   }
-  
-  
-  
-  
   
   # Ask user which parameters to plot
   markerlist<-tk_select.list(colnames(FCSDATA[-1]), multiple=TRUE,title="Select Markers to plot. Hit cancel to use all.") 
@@ -175,8 +171,6 @@ testfile <- capture.output(testfile)[7]
   
   FCSDATA <- FCSDATA[,c(1,marker_cols)]
   
- 
-  
   
   # Melt the data into a continuous table, keeping Time for all values.
   # This allows plotting all parameters using facet_wrap in the next section
@@ -184,29 +178,35 @@ testfile <- capture.output(testfile)[7]
   fcsmelted <- melt(FCSDATA, id.var="Time", value.name = "intensity", variable.name="parameter")
   
   
-  
   #use ggplot2 to draw dot plot
   # library(ggplot2) # Moved to top
   
+  ## Fudge factor for display on log plot
+  Fudge <- 0.9
+  
   ## Add a tiny value to so we can plot on log scale
-  fcsmelted$intensity <- fcsmelted$intensity + 0.9
+  fcsmelted$intensity <- fcsmelted$intensity + Fudge
   
   ## Generate log width bins
   ## Starting at the 0.9 minimum we set previously, ending at max intensity found in data.
   lseq <- function(from=1, to=100000, length.out=6) {
     exp(seq(log(from), log(to), length.out = length.out))
   }
-  bins <- c(seq(0.9,99,1),lseq(100,max(fcsmelted$intensity),256))
+  bins <- c(seq(Fudge,99,1),lseq(100,max(fcsmelted$intensity),256-99))
+  
   
   ## Generate x-axis labels
-  xaxislabels<-c(0,10^seq(0,round(log10(max(fcsmelted$intensity)),0)))
+  xaxis <- c(0,10^seq(0,round(log10(max(fcsmelted$intensity)),0)))
+  #xaxislabels <- log10(as.integer(xaxis))+1
+  #xaxislabels <- c(0,xaxislabels[-1])
  
   
   ## Plot histograms of intensity
   ggplot(fcsmelted, aes(x=intensity, alpha=0.9, fill=parameter)) +
     geom_histogram(bins=length(bins),breaks=bins)+
-    scale_x_continuous(trans="log10",breaks=xaxislabels,labels=scales::scientific)+
-    coord_cartesian(xlim=c(0.9, max(fcsmelted$intensity)))+
+    scale_x_log10(labels=scales::trans_format('log10',scales::math_format(10^.x))) +
+    coord_cartesian(xlim=c(Fudge, max(fcsmelted$intensity)))+
+    #scale_y_log10(labels=scales::trans_format('log10',scales::math_format(10^.x))) +
     # Repeat for all parameters...
     #facet_wrap("parameter")+
     # or with free scales
@@ -214,9 +214,6 @@ testfile <- capture.output(testfile)[7]
     # Hide legend, make text smaller
     theme(legend.position = "none",axis.text.x = element_text(size=8),axis.text.y = element_text(size=8)) +
     ggtitle(filename)
-    
-  
-    
     
   
 } # End of file cancel loop
