@@ -136,6 +136,9 @@ testfile <- capture.output(testfile)[7]
   FCSDATA <- FCSDATA %>% select(-contains("FSC"))
   FCSDATA <- FCSDATA %>% select(-contains("SSC"))
   
+  # Get position of Time in dataset (to handle Flow and CyTOF)
+  TimePos <- which(colnames(FCSDATA)=="Time")
+  
   
   #Calculate size of dataset
   DataSizeM <- (ncol(FCSDATA)*nrow(FCSDATA))/1000000
@@ -150,11 +153,11 @@ testfile <- capture.output(testfile)[7]
   }
   
   # Ask user which parameters to plot
-  markerlist<-tk_select.list(colnames(FCSDATA[-1]), multiple=TRUE,title="Select Markers to plot. Hit cancel to use all.") 
+  markerlist<-tk_select.list(colnames(FCSDATA[-TimePos]), multiple=TRUE,title="Select Markers to plot. Hit cancel to use all.") 
   
   # If user cancels dialog box, use all markers.
   if(length(markerlist)==0 ){
-    markerlist <- colnames(FCSDATA[-1])
+    markerlist <- colnames(FCSDATA[-TimePos])
   }
   
   # Create list of positions of the user-selected markers
@@ -169,7 +172,7 @@ testfile <- capture.output(testfile)[7]
   
   # Remove markers that are not selected but keep first column (time)
   
-  FCSDATA <- FCSDATA[,c(1,marker_cols)]
+  FCSDATA <- FCSDATA[,c(TimePos,marker_cols)]
   
   
   # Melt the data into a continuous table, keeping Time for all values.
