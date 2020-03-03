@@ -45,6 +45,14 @@ if (!require("tcltk")) {
 ### Script starts here
 #########################################################
 
+# Hack to make plots nicer in RStudio Plots window (but not zoom)
+trace(grDevices:::png, quote({
+  if (missing(type) && missing(antialias)) {
+    type <- "cairo-png"
+    antialias <- "subpixel"
+  }
+}), print = FALSE)
+
 # Clear environment
 rm(list = ls(all = TRUE))
 
@@ -94,9 +102,13 @@ testfile <- capture.output(testfile)[7]
   columns<-columns[! columns %in% removefscssc]
   
   
-  
   # Read data into a data frame
   FCSDATA <- as.data.frame(exprs(raw_fcs))
+  # subsample to speed up subsequent processing
+  if (nrow(FCSDATA)>10000){
+    RowsToSample <- sample(1:nrow(FCSDATA),10000)
+    FCSDATA <- FCSDATA[RowsToSample,]
+  }
   
   ############ Optional Data Transform section
   
@@ -117,6 +129,8 @@ testfile <- capture.output(testfile)[7]
   names(FCSDATA)[-1] <- sub("Dd", "", names(FCSDATA)[-1])
   # Create list of channel / parameter descriptions 
   params<-parameters(raw_fcs)[["desc"]]
+  # We no longer need the fcs file from this point on, so remove it to conserve memory
+  rm(raw_fcs)
   # Replace parameters with descriptions, keeping things like Time, Event Length unchanged
   colnames(FCSDATA)[!is.na(params)] <- na.omit(params)
   
@@ -163,8 +177,8 @@ testfile <- capture.output(testfile)[7]
   }
   
   # Since downsampling the dataset doesn't seem to help plotting and it seems to be only related to how many plots,
-  # Testing shows that each plot takes ~1 second on my modest desktop
-  dlg_message(paste("Plotting will take around",length(markerlist),"seconds..."))
+  # Testing shows that each plot takes ~0.5 seconds on my modest desktop
+  dlg_message(paste("Plotting will take around",round(length(markerlist)/2,0),"seconds..."))
   
   # Create list of positions of the user-selected markers
   # V and $ and gsub are used to ensure grep only matches exact / full names
@@ -272,7 +286,3 @@ testfile <- capture.output(testfile)[7]
 if ((testfile)=="character(0)"){
   stop("File selection cancelled")
 }
-
-
-
-
